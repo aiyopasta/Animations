@@ -183,7 +183,8 @@ keys = [0,   # Keyframe 0. Start drawing circle.
         10,  # Keyframe 4. Reveal it's actually a cube (phi down + reveal)
         12,  # Keyframe 5. Casual rotate 2 (pan up yet again)
         14,  # Keyframe 6. Reveal it's actually a hypercube!
-        22]
+        22,  # Keyframe 7. Collapse into tesseract.
+        25]
 
 
 # Squash t parameter to keys
@@ -445,7 +446,7 @@ def run():
                 w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
 
         # Keyframe 6. Reveal it's a hypercube!
-        elif frame == 6: 
+        elif frame == 6:
             u = ease_inout(u)
 
             vtheta0, vtheta1 = np.radians(0.2), np.radians(0.2)
@@ -545,10 +546,13 @@ def run():
                     print(i)
                     w.create_line(*centers[i], *centers[i + 8], fill='orange', width=1)
 
-
                 # Draw the four vertices (c.c. order, starting from top-right)
                 for c in centers:
                     w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+
+        # Keyframe 7. Collapse into tesseract.
+        elif frame == 7:
+            pass
 
 
 
