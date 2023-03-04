@@ -445,7 +445,7 @@ def run():
                 w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
 
         # Keyframe 6. Reveal it's a hypercube!
-        elif frame == 6:
+        elif frame == 6: 
             u = ease_inout(u)
 
             vtheta0, vtheta1 = np.radians(0.2), np.radians(0.2)
