@@ -4,6 +4,24 @@ from tkinter import *
 import time
 import numpy as np
 from playsound import playsound
+from PIL import Image
+import os
+
+# Image vars
+save_anim = False
+stop = False
+img_list = []
+
+# File Output Setup
+main_dir = '/Users/adityaabhyankar/Desktop/Programming/Animations/output'
+ps_files_dir = main_dir + '/Postscript Frames'
+png_files_dir = main_dir + '/Png Frames'
+
+i = 1
+while save_anim and len(os.listdir(ps_files_dir)) != 1:
+    os.remove(ps_files_dir + '/frame' + str(i) + '.ps')
+    os.remove(png_files_dir + '/frame' + str(i) + '.png')
+    i += 1
 
 
 # Window size
@@ -277,13 +295,15 @@ show_axes = True
 
 # Main function
 def run():
-    global t, dt, keys, show_axes, rho, phi, theta, focus, side, radius, translation, w_angle
+    global t, dt, keys, show_axes, rho, phi, theta, focus, side, radius, translation, w_angle, stop, main_dir,\
+        ps_files_dir, png_files_dir, img_list
 
     playsound('close_eyes.MP4', block=False)
 
-    w.configure(background='black')
+    count = 0
     while t <= keys[-1]:
         w.delete('all')
+        w.create_rectangle(0, 0, window_w, window_h, fill='black', outline='black')
 
         # Camera Velocity Update
         rho += v_rho
@@ -295,7 +315,7 @@ def run():
         # Horizontal Lines drawing ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
         mag = 200
         spacing = 100
-        color = np.array([1., 1., 1.]) * 80
+        color = np.array([1., 1., 1.]) * 180
         for y in np.arange(-mag, mag+spacing, spacing):
             p0 = world_to_plane(np.array([-mag, y, 0]))
             p1 = world_to_plane(np.array([+mag, y, 0]))
@@ -309,11 +329,11 @@ def run():
         if show_axes:
             mag = 300
             offset = np.array([0, 0, 0])
-            colors = np.array([[150., 0., 0.], [0., 0., 150.], [180., 0., 180.]])
+            colors = np.array([[255., 0., 0.], [0., 0., 255.], [180., 0., 180.]])
             if frame == 7:
                 colors = (1 - u) * colors
             elif frame > 7:
-                colors = np.array([[150., 0., 0.], [0., 0., 150.], [180., 0., 180.]]) * 0.0
+                colors = np.array([[255., 0., 0.], [0., 0., 255.], [255., 0., 180.]]) * 0.0
 
             direction_vectors = np.array(
                 [np.array([mag, 0, 0]) + offset, np.array([0, mag, 0]) + offset, np.array([0, 0, mag]) + offset])
@@ -335,7 +355,7 @@ def run():
             col = np.array([255, 255, 255]) * draw_u
             # Draw circle
             pts = get_circle_pts(draw_u, radius, np.array([0, 0, side]), du=0.01)
-            w.create_polygon(*pts, outline='white', width=1, fill=rgb_to_hex(col))
+            w.create_polygon(*pts, outline='white', width=3, fill=rgb_to_hex(col))
 
         # Keyframe 1 — Reveal we're in 3D + it's actually a line.
         elif frame == 1:
@@ -343,11 +363,11 @@ def run():
             center_top = world_to_plane(np.array([0, 0, side]))
             center_bot = world_to_plane(np.array([0, 0, -side]))
             # Draw line
-            w.create_line(*center_top, *center_bot, fill='white', width=1)
+            w.create_line(*center_top, *center_bot, fill='white', width=3)
             # Draw bottom circle + line
-            w.create_oval(*(center_bot - radius), *(center_bot + radius), outline='white', width=1, fill=rgb_to_hex(col))
+            w.create_oval(*(center_bot - radius), *(center_bot + radius), outline='white', width=3, fill=rgb_to_hex(col))
             # Redraw top circle
-            w.create_oval(*(center_top - radius), *(center_top + radius), outline='white', width=1, fill=rgb_to_hex(col))
+            w.create_oval(*(center_top - radius), *(center_top + radius), outline='white', width=3, fill=rgb_to_hex(col))
             # Move
             vtheta0, vtheta1 = 0, np.radians(1.2)
             theta += ((1 - u) * vtheta0) + (u * vtheta1)
@@ -367,11 +387,11 @@ def run():
                 # Draw line
                 center_top = world_to_plane(np.array([0, 0, side]))
                 center_bot = world_to_plane(np.array([0, 0, -side]))
-                w.create_line(*center_top, *center_bot, fill='white', width=1)
+                w.create_line(*center_top, *center_bot, fill='white', width=3)
                 # Redraw top circle
-                w.create_oval(*(center_top - radius), *(center_top + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                w.create_oval(*(center_top - radius), *(center_top + radius), outline='white', width=3, fill=rgb_to_hex(col))
                 # Draw bottom circle + line
-                w.create_oval(*(center_bot - radius), *(center_bot + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                w.create_oval(*(center_bot - radius), *(center_bot + radius), outline='white', width=3, fill=rgb_to_hex(col))
             else:
                 # Initialize centers
                 centers = [
@@ -381,13 +401,13 @@ def run():
                     world_to_plane(np.array([0, side, -side]))
                 ]
                 # Connect 'em with 4 lines to form square
-                w.create_line(*centers[0], *centers[1], fill='white', width=1)
-                w.create_line(*centers[1], *centers[2], fill='white', width=1)
-                w.create_line(*centers[2], *centers[3], fill='white', width=1)
-                w.create_line(*centers[3], *centers[0], fill='white', width=1)
+                w.create_line(*centers[0], *centers[1], fill='white', width=3)
+                w.create_line(*centers[1], *centers[2], fill='white', width=3)
+                w.create_line(*centers[2], *centers[3], fill='white', width=3)
+                w.create_line(*centers[3], *centers[0], fill='white', width=3)
                 # Draw the four vertices (c.c. order, starting from top-right)
                 for c in centers:
-                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=3, fill=rgb_to_hex(col))
 
         # Keyframe 3 — Casual rotate 1 (phi up again)
         elif frame == 3:
@@ -404,13 +424,13 @@ def run():
                 world_to_plane(np.array([0, side, -side]))
             ]
             # Connect 'em with 4 lines to form square
-            w.create_line(*centers[0], *centers[1], fill='white', width=1)
-            w.create_line(*centers[1], *centers[2], fill='white', width=1)
-            w.create_line(*centers[2], *centers[3], fill='white', width=1)
-            w.create_line(*centers[3], *centers[0], fill='white', width=1)
+            w.create_line(*centers[0], *centers[1], fill='white', width=3)
+            w.create_line(*centers[1], *centers[2], fill='white', width=3)
+            w.create_line(*centers[2], *centers[3], fill='white', width=3)
+            w.create_line(*centers[3], *centers[0], fill='white', width=3)
             # Draw the four vertices (c.c. order, starting from top-right)
             for c in centers:
-                w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                w.create_oval(*(c - radius), *(c + radius), outline='white', width=3, fill=rgb_to_hex(col))
 
         # Keyframe 4. Reveal it's actually a cube (phi down + reveal)
         elif frame == 4:
@@ -430,13 +450,13 @@ def run():
                     world_to_plane(np.array([0, side, -side]))
                 ]
                 # Connect 'em with 4 lines to form square
-                w.create_line(*centers[0], *centers[1], fill='white', width=1)
-                w.create_line(*centers[1], *centers[2], fill='white', width=1)
-                w.create_line(*centers[2], *centers[3], fill='white', width=1)
-                w.create_line(*centers[3], *centers[0], fill='white', width=1)
+                w.create_line(*centers[0], *centers[1], fill='white', width=3)
+                w.create_line(*centers[1], *centers[2], fill='white', width=3)
+                w.create_line(*centers[2], *centers[3], fill='white', width=3)
+                w.create_line(*centers[3], *centers[0], fill='white', width=3)
                 # Draw the four vertices (c.c. order, starting from top-right)
                 for c in centers:
-                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=3, fill=rgb_to_hex(col))
             else:
                 # Redraw cube
                 centers = [
@@ -451,23 +471,23 @@ def run():
                     world_to_plane(np.array([-side, side, -side]))
                 ]
                 # Connect 'em with 12 lines to form square
-                w.create_line(*centers[0], *centers[1], fill='white', width=1)
-                w.create_line(*centers[1], *centers[2], fill='white', width=1)
-                w.create_line(*centers[2], *centers[3], fill='white', width=1)
-                w.create_line(*centers[3], *centers[0], fill='white', width=1)
+                w.create_line(*centers[0], *centers[1], fill='white', width=3)
+                w.create_line(*centers[1], *centers[2], fill='white', width=3)
+                w.create_line(*centers[2], *centers[3], fill='white', width=3)
+                w.create_line(*centers[3], *centers[0], fill='white', width=3)
 
-                w.create_line(*centers[4], *centers[5], fill='white', width=1)
-                w.create_line(*centers[5], *centers[6], fill='white', width=1)
-                w.create_line(*centers[6], *centers[7], fill='white', width=1)
-                w.create_line(*centers[7], *centers[4], fill='white', width=1)
+                w.create_line(*centers[4], *centers[5], fill='white', width=3)
+                w.create_line(*centers[5], *centers[6], fill='white', width=3)
+                w.create_line(*centers[6], *centers[7], fill='white', width=3)
+                w.create_line(*centers[7], *centers[4], fill='white', width=3)
 
-                w.create_line(*centers[0], *centers[4], fill='white', width=1)
-                w.create_line(*centers[1], *centers[5], fill='white', width=1)
-                w.create_line(*centers[2], *centers[6], fill='white', width=1)
-                w.create_line(*centers[3], *centers[7], fill='white', width=1)
+                w.create_line(*centers[0], *centers[4], fill='white', width=3)
+                w.create_line(*centers[1], *centers[5], fill='white', width=3)
+                w.create_line(*centers[2], *centers[6], fill='white', width=3)
+                w.create_line(*centers[3], *centers[7], fill='white', width=3)
                 # Draw the four vertices (c.c. order, starting from top-right)
                 for c in centers:
-                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=3, fill=rgb_to_hex(col))
 
         # Keyframe 5. Pan up casually.
         elif frame == 5:
@@ -489,23 +509,23 @@ def run():
                 world_to_plane(np.array([side, side, -side]))
             ]
             # Connect 'em with 12 lines to form square
-            w.create_line(*centers[0], *centers[1], fill='white', width=1)
-            w.create_line(*centers[1], *centers[2], fill='white', width=1)
-            w.create_line(*centers[2], *centers[3], fill='white', width=1)
-            w.create_line(*centers[3], *centers[0], fill='white', width=1)
+            w.create_line(*centers[0], *centers[1], fill='white', width=3)
+            w.create_line(*centers[1], *centers[2], fill='white', width=3)
+            w.create_line(*centers[2], *centers[3], fill='white', width=3)
+            w.create_line(*centers[3], *centers[0], fill='white', width=3)
 
-            w.create_line(*centers[4], *centers[5], fill='white', width=1)
-            w.create_line(*centers[5], *centers[6], fill='white', width=1)
-            w.create_line(*centers[6], *centers[7], fill='white', width=1)
-            w.create_line(*centers[7], *centers[4], fill='white', width=1)
+            w.create_line(*centers[4], *centers[5], fill='white', width=3)
+            w.create_line(*centers[5], *centers[6], fill='white', width=3)
+            w.create_line(*centers[6], *centers[7], fill='white', width=3)
+            w.create_line(*centers[7], *centers[4], fill='white', width=3)
 
-            w.create_line(*centers[0], *centers[4], fill='white', width=1)
-            w.create_line(*centers[1], *centers[5], fill='white', width=1)
-            w.create_line(*centers[2], *centers[6], fill='white', width=1)
-            w.create_line(*centers[3], *centers[7], fill='white', width=1)
+            w.create_line(*centers[0], *centers[4], fill='white', width=3)
+            w.create_line(*centers[1], *centers[5], fill='white', width=3)
+            w.create_line(*centers[2], *centers[6], fill='white', width=3)
+            w.create_line(*centers[3], *centers[7], fill='white', width=3)
             # Draw the four vertices (c.c. order, starting from top-right)
             for c in centers:
-                w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                w.create_oval(*(c - radius), *(c + radius), outline='white', width=3, fill=rgb_to_hex(col))
 
         # Keyframe 6. Reveal it's a hypercube!
         elif frame == 6:
@@ -533,24 +553,24 @@ def run():
                     world_to_plane(np.array([side, side, -side]))
                 ]
                 # Connect 'em with 12 lines to form square
-                w.create_line(*centers[0], *centers[1], fill='white', width=1)
-                w.create_line(*centers[1], *centers[2], fill='white', width=1)
-                w.create_line(*centers[2], *centers[3], fill='white', width=1)
-                w.create_line(*centers[3], *centers[0], fill='white', width=1)
+                w.create_line(*centers[0], *centers[1], fill='white', width=3)
+                w.create_line(*centers[1], *centers[2], fill='white', width=3)
+                w.create_line(*centers[2], *centers[3], fill='white', width=3)
+                w.create_line(*centers[3], *centers[0], fill='white', width=3)
 
-                w.create_line(*centers[4], *centers[5], fill='white', width=1)
-                w.create_line(*centers[5], *centers[6], fill='white', width=1)
-                w.create_line(*centers[6], *centers[7], fill='white', width=1)
-                w.create_line(*centers[7], *centers[4], fill='white', width=1)
+                w.create_line(*centers[4], *centers[5], fill='white', width=3)
+                w.create_line(*centers[5], *centers[6], fill='white', width=3)
+                w.create_line(*centers[6], *centers[7], fill='white', width=3)
+                w.create_line(*centers[7], *centers[4], fill='white', width=3)
 
-                w.create_line(*centers[0], *centers[4], fill='white', width=1)
-                w.create_line(*centers[1], *centers[5], fill='white', width=1)
-                w.create_line(*centers[2], *centers[6], fill='white', width=1)
-                w.create_line(*centers[3], *centers[7], fill='white', width=1)
+                w.create_line(*centers[0], *centers[4], fill='white', width=3)
+                w.create_line(*centers[1], *centers[5], fill='white', width=3)
+                w.create_line(*centers[2], *centers[6], fill='white', width=3)
+                w.create_line(*centers[3], *centers[7], fill='white', width=3)
 
                 # Draw the four vertices (c.c. order, starting from top-right)
                 for i, c in enumerate(centers):
-                    w.create_oval(*(c - r), *(c + r), outline='white', width=1, fill=rgb_to_hex(col))
+                    w.create_oval(*(c - r), *(c + r), outline='white', width=3, fill=rgb_to_hex(col))
             else:
                 if translation is None:
                     # Radial distance to eye from world's origin.
@@ -583,39 +603,39 @@ def run():
                     world_to_plane(np.array([side, side, -side]) + translation)
                 ]
                 # Connect 'em with 36 lines to form square
-                w.create_line(*centers[0], *centers[1], fill='white', width=1)
-                w.create_line(*centers[1], *centers[2], fill='white', width=1)
-                w.create_line(*centers[2], *centers[3], fill='white', width=1)
-                w.create_line(*centers[3], *centers[0], fill='white', width=1)
-                w.create_line(*centers[4], *centers[5], fill='white', width=1)
-                w.create_line(*centers[5], *centers[6], fill='white', width=1)
-                w.create_line(*centers[6], *centers[7], fill='white', width=1)
-                w.create_line(*centers[7], *centers[4], fill='white', width=1)
-                w.create_line(*centers[0], *centers[4], fill='white', width=1)
-                w.create_line(*centers[1], *centers[5], fill='white', width=1)
-                w.create_line(*centers[2], *centers[6], fill='white', width=1)
-                w.create_line(*centers[3], *centers[7], fill='white', width=1)
+                w.create_line(*centers[0], *centers[1], fill='white', width=3)
+                w.create_line(*centers[1], *centers[2], fill='white', width=3)
+                w.create_line(*centers[2], *centers[3], fill='white', width=3)
+                w.create_line(*centers[3], *centers[0], fill='white', width=3)
+                w.create_line(*centers[4], *centers[5], fill='white', width=3)
+                w.create_line(*centers[5], *centers[6], fill='white', width=3)
+                w.create_line(*centers[6], *centers[7], fill='white', width=3)
+                w.create_line(*centers[7], *centers[4], fill='white', width=3)
+                w.create_line(*centers[0], *centers[4], fill='white', width=3)
+                w.create_line(*centers[1], *centers[5], fill='white', width=3)
+                w.create_line(*centers[2], *centers[6], fill='white', width=3)
+                w.create_line(*centers[3], *centers[7], fill='white', width=3)
 
-                w.create_line(*centers[8], *centers[9], fill='white', width=1)
-                w.create_line(*centers[9], *centers[10], fill='white', width=1)
-                w.create_line(*centers[10], *centers[11], fill='white', width=1)
-                w.create_line(*centers[11], *centers[8], fill='white', width=1)
-                w.create_line(*centers[12], *centers[13], fill='white', width=1)
-                w.create_line(*centers[13], *centers[14], fill='white', width=1)
-                w.create_line(*centers[14], *centers[15], fill='white', width=1)
-                w.create_line(*centers[15], *centers[12], fill='white', width=1)
-                w.create_line(*centers[8], *centers[12], fill='white', width=1)
-                w.create_line(*centers[9], *centers[13], fill='white', width=1)
-                w.create_line(*centers[10], *centers[14], fill='white', width=1)
-                w.create_line(*centers[11], *centers[15], fill='white', width=1)
+                w.create_line(*centers[8], *centers[9], fill='white', width=3)
+                w.create_line(*centers[9], *centers[10], fill='white', width=3)
+                w.create_line(*centers[10], *centers[11], fill='white', width=3)
+                w.create_line(*centers[11], *centers[8], fill='white', width=3)
+                w.create_line(*centers[12], *centers[13], fill='white', width=3)
+                w.create_line(*centers[13], *centers[14], fill='white', width=3)
+                w.create_line(*centers[14], *centers[15], fill='white', width=3)
+                w.create_line(*centers[15], *centers[12], fill='white', width=3)
+                w.create_line(*centers[8], *centers[12], fill='white', width=3)
+                w.create_line(*centers[9], *centers[13], fill='white', width=3)
+                w.create_line(*centers[10], *centers[14], fill='white', width=3)
+                w.create_line(*centers[11], *centers[15], fill='white', width=3)
 
                 # cross-edges
                 for i in range(8):
-                    w.create_line(*centers[i], *centers[i + 8], fill='orange', width=1)
+                    w.create_line(*centers[i], *centers[i + 8], fill='orange', width=3)
 
                 # Draw the four vertices (c.c. order, starting from top-right)
                 for c in centers:
-                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=1, fill=rgb_to_hex(col))
+                    w.create_oval(*(c - radius), *(c + radius), outline='white', width=3, fill=rgb_to_hex(col))
 
         # Keyframe 7. Collapse into tesseract.
         elif frame == 7:
@@ -674,40 +694,40 @@ def run():
             centers = ((1 - u) * np.array(centers0)) + (u * np.array(centers1))
 
             # Connect 'em with 36 lines to form square
-            w.create_line(*centers[0], *centers[1], fill='white', width=1)
-            w.create_line(*centers[1], *centers[2], fill='white', width=1)
-            w.create_line(*centers[2], *centers[3], fill='white', width=1)
-            w.create_line(*centers[3], *centers[0], fill='white', width=1)
-            w.create_line(*centers[4], *centers[5], fill='white', width=1)
-            w.create_line(*centers[5], *centers[6], fill='white', width=1)
-            w.create_line(*centers[6], *centers[7], fill='white', width=1)
-            w.create_line(*centers[7], *centers[4], fill='white', width=1)
-            w.create_line(*centers[0], *centers[4], fill='white', width=1)
-            w.create_line(*centers[1], *centers[5], fill='white', width=1)
-            w.create_line(*centers[2], *centers[6], fill='white', width=1)
-            w.create_line(*centers[3], *centers[7], fill='white', width=1)
+            w.create_line(*centers[0], *centers[1], fill='white', width=3)
+            w.create_line(*centers[1], *centers[2], fill='white', width=3)
+            w.create_line(*centers[2], *centers[3], fill='white', width=3)
+            w.create_line(*centers[3], *centers[0], fill='white', width=3)
+            w.create_line(*centers[4], *centers[5], fill='white', width=3)
+            w.create_line(*centers[5], *centers[6], fill='white', width=3)
+            w.create_line(*centers[6], *centers[7], fill='white', width=3)
+            w.create_line(*centers[7], *centers[4], fill='white', width=3)
+            w.create_line(*centers[0], *centers[4], fill='white', width=3)
+            w.create_line(*centers[1], *centers[5], fill='white', width=3)
+            w.create_line(*centers[2], *centers[6], fill='white', width=3)
+            w.create_line(*centers[3], *centers[7], fill='white', width=3)
 
-            w.create_line(*centers[8], *centers[9], fill='white', width=1)
-            w.create_line(*centers[9], *centers[10], fill='white', width=1)
-            w.create_line(*centers[10], *centers[11], fill='white', width=1)
-            w.create_line(*centers[11], *centers[8], fill='white', width=1)
-            w.create_line(*centers[12], *centers[13], fill='white', width=1)
-            w.create_line(*centers[13], *centers[14], fill='white', width=1)
-            w.create_line(*centers[14], *centers[15], fill='white', width=1)
-            w.create_line(*centers[15], *centers[12], fill='white', width=1)
-            w.create_line(*centers[8], *centers[12], fill='white', width=1)
-            w.create_line(*centers[9], *centers[13], fill='white', width=1)
-            w.create_line(*centers[10], *centers[14], fill='white', width=1)
-            w.create_line(*centers[11], *centers[15], fill='white', width=1)
+            w.create_line(*centers[8], *centers[9], fill='white', width=3)
+            w.create_line(*centers[9], *centers[10], fill='white', width=3)
+            w.create_line(*centers[10], *centers[11], fill='white', width=3)
+            w.create_line(*centers[11], *centers[8], fill='white', width=3)
+            w.create_line(*centers[12], *centers[13], fill='white', width=3)
+            w.create_line(*centers[13], *centers[14], fill='white', width=3)
+            w.create_line(*centers[14], *centers[15], fill='white', width=3)
+            w.create_line(*centers[15], *centers[12], fill='white', width=3)
+            w.create_line(*centers[8], *centers[12], fill='white', width=3)
+            w.create_line(*centers[9], *centers[13], fill='white', width=3)
+            w.create_line(*centers[10], *centers[14], fill='white', width=3)
+            w.create_line(*centers[11], *centers[15], fill='white', width=3)
 
             # cross-edges
             for i in range(8):
-                w.create_line(*centers[i], *centers[i + 8], fill='orange', width=1)
+                w.create_line(*centers[i], *centers[i + 8], fill='orange', width=3)
 
             # Draw the four vertices (c.c. order, starting from top-right)
             r = ((1 - u) * radius) + (u * (radius / 3))
             for c in centers:
-                w.create_oval(*(c - r), *(c + r), outline='white', width=1, fill='white')
+                w.create_oval(*(c - r), *(c + r), outline='white', width=3, fill='white')
 
         # Keyframe 8. Rotate in 4D!
         elif frame == 8:
@@ -744,53 +764,64 @@ def run():
             theta += ((1 - u) * vtheta0) + (u * vtheta1)
 
             # Connect 'em with 36 lines to form square
-            w.create_line(*centers[0], *centers[1], fill='white', width=1)
-            w.create_line(*centers[1], *centers[2], fill='white', width=1)
-            w.create_line(*centers[2], *centers[3], fill='white', width=1)
-            w.create_line(*centers[3], *centers[0], fill='white', width=1)
-            w.create_line(*centers[4], *centers[5], fill='white', width=1)
-            w.create_line(*centers[5], *centers[6], fill='white', width=1)
-            w.create_line(*centers[6], *centers[7], fill='white', width=1)
-            w.create_line(*centers[7], *centers[4], fill='white', width=1)
-            w.create_line(*centers[0], *centers[4], fill='white', width=1)
-            w.create_line(*centers[1], *centers[5], fill='white', width=1)
-            w.create_line(*centers[2], *centers[6], fill='white', width=1)
-            w.create_line(*centers[3], *centers[7], fill='white', width=1)
+            w.create_line(*centers[0], *centers[1], fill='white', width=3)
+            w.create_line(*centers[1], *centers[2], fill='white', width=3)
+            w.create_line(*centers[2], *centers[3], fill='white', width=3)
+            w.create_line(*centers[3], *centers[0], fill='white', width=3)
+            w.create_line(*centers[4], *centers[5], fill='white', width=3)
+            w.create_line(*centers[5], *centers[6], fill='white', width=3)
+            w.create_line(*centers[6], *centers[7], fill='white', width=3)
+            w.create_line(*centers[7], *centers[4], fill='white', width=3)
+            w.create_line(*centers[0], *centers[4], fill='white', width=3)
+            w.create_line(*centers[1], *centers[5], fill='white', width=3)
+            w.create_line(*centers[2], *centers[6], fill='white', width=3)
+            w.create_line(*centers[3], *centers[7], fill='white', width=3)
 
-            w.create_line(*centers[8], *centers[9], fill='white', width=1)
-            w.create_line(*centers[9], *centers[10], fill='white', width=1)
-            w.create_line(*centers[10], *centers[11], fill='white', width=1)
-            w.create_line(*centers[11], *centers[8], fill='white', width=1)
-            w.create_line(*centers[12], *centers[13], fill='white', width=1)
-            w.create_line(*centers[13], *centers[14], fill='white', width=1)
-            w.create_line(*centers[14], *centers[15], fill='white', width=1)
-            w.create_line(*centers[15], *centers[12], fill='white', width=1)
-            w.create_line(*centers[8], *centers[12], fill='white', width=1)
-            w.create_line(*centers[9], *centers[13], fill='white', width=1)
-            w.create_line(*centers[10], *centers[14], fill='white', width=1)
-            w.create_line(*centers[11], *centers[15], fill='white', width=1)
+            w.create_line(*centers[8], *centers[9], fill='white', width=3)
+            w.create_line(*centers[9], *centers[10], fill='white', width=3)
+            w.create_line(*centers[10], *centers[11], fill='white', width=3)
+            w.create_line(*centers[11], *centers[8], fill='white', width=3)
+            w.create_line(*centers[12], *centers[13], fill='white', width=3)
+            w.create_line(*centers[13], *centers[14], fill='white', width=3)
+            w.create_line(*centers[14], *centers[15], fill='white', width=3)
+            w.create_line(*centers[15], *centers[12], fill='white', width=3)
+            w.create_line(*centers[8], *centers[12], fill='white', width=3)
+            w.create_line(*centers[9], *centers[13], fill='white', width=3)
+            w.create_line(*centers[10], *centers[14], fill='white', width=3)
+            w.create_line(*centers[11], *centers[15], fill='white', width=3)
 
             # cross-edges
             for i in range(8):
-                w.create_line(*centers[i], *centers[i + 8], fill='orange', width=1)
+                w.create_line(*centers[i], *centers[i + 8], fill='orange', width=3)
 
             # Draw the four vertices (c.c. order, starting from top-right)
             for c in centers:
-                w.create_oval(*(c - radius/3), *(c + radius/3), outline='white', width=1, fill='white')
+                w.create_oval(*(c - radius/3), *(c + radius/3), outline='white', width=3, fill='white')
 
+        # Save frame to image
+        if save_anim:
+            filename = '/frame' + str(count)
+            w.postscript(file=ps_files_dir + filename + '.ps', colormode='color')
+            img = Image.open(ps_files_dir + filename + '.ps')
+            img_list.append(img)
 
-
-
-
-
-
-
-
+        count += 1
         # End run
         t += dt
         w.update()
         time.sleep(0.001)
 
+
+def on_closing():
+    global stop, main_dir, ps_files_dir, png_files_dir, img_list, save_anim
+    if save_anim:
+        stop = True
+        img_list[1].save('out.gif', save_all=True, append_images=img_list)
+
+    root.destroy()
+
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Main function
 if __name__ == '__main__':
