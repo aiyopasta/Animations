@@ -1,12 +1,18 @@
-import pygame
 import numpy as np
 import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+import pygame
+from playsound import playsound
+
+# Save the animation?
+save_anim = False
 
 # Pygame + gameloop setup
-width = 1720
-height = 1050
+alpha = 1 / 1.9
+width = np.ceil(888 * alpha / 2) * 2
+height = np.ceil(1920 * alpha / 2) * 2
 window = pygame.display.set_mode((width, height))
-pygame.display.set_caption("PyGame Fun")
+pygame.display.set_caption("TikTok Template")
 
 
 # Coordinate Shift
@@ -63,11 +69,11 @@ x = 0
 
 
 # Additional params / knobs
-save_anim = True
+play_music = True
 
 
-def runner():
-    global t, dt, keys, FPS, x, save_anim
+def main():
+    global t, dt, keys, FPS, x, save_anim, play_music
 
     # Pre-animation setup
     clock = pygame.time.Clock()
@@ -84,17 +90,21 @@ def runner():
                 os.remove(os.path.join(path_to_save, filename))
                 print('Deleted frame ' + filename)
 
+    # Play music
+    if not save_anim and play_music:
+        playsound('木(剪辑版).mov', block=False)
+
     # Game loop
     count = 0
     while run:
-        # Basic drawing demo
-        window.fill((255, 255, 255))
+        # Basic drawing demo ––– (feel free to delete!)
+        window.fill((0, 0, 0))
         rekt = (300 + x, 300, 100, 100)  # rectangle definition: (x_top, y_top, width, height)
         pygame.draw.rect(surface=window, color=(255, 0, 0), rect=rekt, width=0)  # Really dumb thing: it doesn't draw border + fill in a single line...
-        pygame.draw.rect(surface=window, color=(0, 0, 0), rect=rekt, width=3)    # Need this additional line for border.
+        pygame.draw.rect(surface=window, color=(255, 255, 255), rect=rekt, width=3)    # Need this additional line for border.
         x += 2
         pygame.draw.polygon(window, (0, 255, 0), [(100, 100), (200, 0), (300, 300), (100, 400)], 0)
-        pygame.draw.lines(window, (0, 0, 255), False, [(200, 100), (200, 800), (300 + x, 400), (100, 900)], width=1)
+        pygame.draw.lines(window, (0, 0, 255), False, [(width, height), (200, 800), (300 + x, 400), (100, 900)], width=2)  # false there means "open"
 
         # Draw preliminary stuff for animation
         # Do stuff...
@@ -130,9 +140,9 @@ def runner():
         input_files = path_to_save + '/frame%d.png'
         output_file = path_to_save + '/output.mp4'
         ffmpeg_path = "/opt/homebrew/bin/ffmpeg"
-        os.system(f'{ffmpeg_path} -i {input_files} -vcodec libx264 -crf 25 -pix_fmt yuv420p {output_file} > /dev/null 2>&1')
+        os.system(f'{ffmpeg_path} -r 60 -i {input_files} -vcodec libx264 -crf 25 -pix_fmt yuv420p -vf "eq=brightness=0.00:saturation=1.3" {output_file} > /dev/null 2>&1')
         print('Saved video to ' + output_file)
 
 
 if __name__ == "__main__":
-    runner()
+    main()
